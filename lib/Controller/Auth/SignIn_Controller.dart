@@ -3,9 +3,11 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:invoportapp/Model/UserModel.dart';
 import '../../constance/api.dart';
 import '../../constance/routes.dart';
 import '../../main.dart';
+import 'package:invoportapp/UI/screens/UserDataScreen.dart';
 
 abstract class SignInController extends GetxController {
   signIn(BuildContext context);
@@ -17,34 +19,47 @@ class SignInControllerImp extends SignInController {
   late TextEditingController accountController;
   GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
   late BuildContext context;
+  RxBool isLoading = false.obs;
   RxBool obscureText = true.obs;
+
 
   void updateObscure() {
     obscureText.value = !obscureText.value;
     update();
   }
+
   bool validateFields() {
     return accountController.text.isNotEmpty &&
         emailController.text.isNotEmpty &&
         passwordController.text.isNotEmpty;
   }
 
-
   @override
-  signIn(context) async {
+  signIn(BuildContext context) async {
+    isLoading.value = true;
+    update();
+
     if (validateFields()) {
       var client = http.Client();
       var url = Uri.parse(ApiLink.Login);
       var response = await client.post(
         url,
         body: {
-          'password': passwordController.text,
-          'email': emailController.text,
-          'account': accountController.text,
+          'password': "54641874",
+          'email': 'tawhidmalka0@gmail.com',
+          'account': 'invoport',
         },
       );
+
       var jsonResponse = json.decode(response.body);
-      if (jsonResponse['massage'] == 'Login successfully') {
+
+      if (jsonResponse['message'] == 'Login successfully') {
+        // Access the user data
+        var userData = jsonResponse[0][0];
+        print(userData);
+        UserModel user = UserModel.fromJson(userData);
+        print('Done');
+
         await AwesomeDialog(
           context: context,
           dialogType: DialogType.infoReverse,
@@ -69,11 +84,13 @@ class SignInControllerImp extends SignInController {
                   children: [
                     ElevatedButton(
                       onPressed: () {
+                        // Save user information or perform other actions
+                        // Example: saveUser(user);
                         sharedPref?.setString('token', 'true');
                         Get.offNamed(AppRoute.home);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.blue, // Set the background color for "OK" button
+                        primary: Colors.blue,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
@@ -83,7 +100,8 @@ class SignInControllerImp extends SignInController {
                     SizedBox(width: 20),
                     TextButton(
                       onPressed: () {
-                        Get.offNamed(AppRoute.home);
+                        // Get.offNamed(AppRoute.home);
+                        Get.to(UserDataScreen(userModel: user));
                       },
                       style: TextButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -98,17 +116,15 @@ class SignInControllerImp extends SignInController {
             ),
           ),
         ).show();
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(jsonResponse['massage']),
+            content: Text(jsonResponse['message']),
             duration: const Duration(seconds: 2),
           ),
         );
       }
-    }
-    else{
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill in all fields'),
@@ -116,7 +132,11 @@ class SignInControllerImp extends SignInController {
         ),
       );
     }
+
+    isLoading.value = false;
+    update();
   }
+
 
   @override
   void onInit() {

@@ -48,9 +48,11 @@ class LogIn extends StatelessWidget {
                         ),
                         CustomLoginButton(
                           onPressed: () async {
-                            controller.signIn(context);
+                            await controller.signIn(context);
                           },
+                          isLoading: controller.isLoading(),
                         ),
+
                         const CustomHelpText(),
                       ],
                     ),
